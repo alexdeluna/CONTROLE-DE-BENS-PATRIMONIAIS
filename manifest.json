@@ -1,0 +1,11 @@
+{
+  "name": "Portal de Gestão Patrimonial",
+  "short_name": "Gestão Patrimonial",
+  "description": "Portal institucional de gestão patrimonial",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6f9",
+  "theme_color": "#123b63",
+  "icons": []
+}

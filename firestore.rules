@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profileExists() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    function activeUser() {
+      return profileExists()
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.ativo == true;
+    }
+
+    function isAdm() {
+      return activeUser()
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'ADM';
+    }
+
+    function isGestor() {
+      return activeUser()
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'GESTOR_PATRIMONIAL';
+    }
+
+    function canRead() {
+      return isAdm() || isGestor();
+    }
+
+    match /usuarios/{userId} {
+      // A criação inicial do primeiro ADM deve ser feita pelo console Firebase.
+      // Usuários não podem promover a si mesmos nem alterar seu próprio perfil.
+      allow read: if canRead() && (isAdm() || userId == request.auth.uid);
+      allow create, update, delete: if isAdm() && userId != request.auth.uid;
+    }
+
+    match /bens/{id} {
+      allow read: if canRead();
+      allow create, update: if canRead();
+      allow delete: if isAdm();
+    }
+
+    match /categorias/{id} {
+      allow read: if canRead();
+      allow create, update: if isAdm() || isGestor();
+      allow delete: if isAdm();
+    }
+
+    match /responsaveis/{id} {
+      allow read: if canRead();
+      allow create, update: if isAdm() || isGestor();
+      allow delete: if isAdm();
+    }
+
+    match /setores/{id} {
+      allow read: if canRead();
+      allow create, update: if isAdm() || isGestor();
+      allow delete: if isAdm();
+    }
+
+    match /locais/{id} {
+      allow read: if canRead();
+      allow create, update: if isAdm() || isGestor();
+      allow delete: if isAdm();
+    }
+
+    match /unidades/{id} {
+      allow read: if canRead();
+      allow create, update: if isAdm() || isGestor();
+      allow delete: if isAdm();
+    }
+
+    match /andares/{id} {
+      allow read: if canRead();
+      allow create, update: if isAdm() || isGestor();
+      allow delete: if isAdm();
+    }
+
+    match /movimentacoes/{id} {
+      allow read: if canRead();
+      allow create: if canRead();
+      allow update, delete: if isAdm();
+    }
+
+    match /baixas/{id} {
+      allow read: if canRead();
+      allow create: if isAdm();
+      allow update, delete: if false;
+    }
+
+    match /auditoria/{id} {
+      allow read: if isAdm() || isGestor();
+      allow create: if canRead();
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
